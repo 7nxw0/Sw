@@ -1,0 +1,116 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f8f3fc"><title>100 Days</title><style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,input{font:inherit}
+button{touch-action:manipulation;-webkit-user-select:none;user-select:none}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:radial-gradient(circle at 50% 20%,#fff 0,#fbf8fe 55%,#f1e8fa 100%);color:#42384b;min-height:100vh;min-height:100dvh}.app{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}.screen{display:none;width:min(92vw,520px);text-align:center}.screen.active{display:block;animation:fade .35s ease}@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}h1{font-size:25px;font-weight:600;margin:0 0 28px}.datebox{display:flex;gap:8px;justify-content:center}.datebox input{width:100%;padding:15px 12px;border:1px solid #d9c7e8;border-radius:15px;background:#fff;color:#4c4054;font-size:17px;text-align:center;outline:none}.btn{border:0;border-radius:999px;padding:13px 25px;font-size:16px;background:#a985ca;color:white;box-shadow:0 5px 16px #bba3cf55;cursor:pointer}.btn.ghost{background:#fff;color:#775d91;border:1px solid #d8c7e5;box-shadow:none}.submit{margin-top:18px}.hint{min-height:25px;margin-top:14px;color:#9876b4;font-size:14px}.loveBtns{height:80px;position:relative;display:flex;justify-content:center;gap:16px;align-items:flex-start}.no{position:relative;transition:transform .22s ease}.msg{height:28px;color:#9876b4}.menu{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{padding:22px 8px;border:1px solid #e2d6eb;border-radius:20px;background:#ffffffcc;box-shadow:0 8px 25px #9276a91c;font-size:16px;color:#574760;cursor:pointer}.icon{display:block;font-size:28px;margin-bottom:9px}.home{margin-top:28px;background:none;border:0;color:#8b739f;text-decoration:underline;cursor:pointer}.viewer{width:min(94vw,720px)}.viewer img{display:block;max-width:100%;max-height:78vh;margin:auto;object-fit:contain;border-radius:10px;filter:drop-shadow(0 10px 22px #6e57701f)}.viewer .nav{display:flex;justify-content:center;gap:10px;margin-top:16px}.counter{font-size:13px;color:#947da5;margin:10px 0}.back{margin-top:15px}.bouquet img{max-height:74vh}.coupon img{max-height:65vh}@media(max-width:430px){.app{padding:18px}.menu{gap:8px}.card{padding:20px 5px;font-size:15px}h1{font-size:22px}.viewer img{max-height:73vh}}
+</style></head><body><main class="app">
+<section id="lock" class="screen active"><h1>비밀번호를 입력해 주세요</h1><div class="datebox"><input id="date" type="date" aria-label="비밀번호 날짜"></div><button class="btn submit" onclick="unlock()">확인</button><div id="hint" class="hint"></div></section>
+<section id="love" class="screen"><h1>앞으로도 나랑 함께해줄래?</h1><div class="loveBtns"><button id="yes" class="btn" onclick="show('menu')">YES</button><button id="no" class="btn ghost no">NO</button></div><div id="nomsg" class="msg"></div></section>
+<section id="menu" class="screen"><h1>보고 싶은 걸 골라봐 💜</h1><div class="menu"><button class="card" onclick="show('bouquet')"><span class="icon">💐</span>꽃다발</button><button class="card" onclick="show('coupon')"><span class="icon">🎁</span>선물</button><button class="card" onclick="openLetter()"><span class="icon">💌</span>편지</button></div><button class="home" onclick="resetAll()">처음으로 돌아가기</button></section>
+<section id="bouquet" class="screen viewer bouquet"><img src="assets/bouquet.jpeg" alt="100일 꽃다발"><div class="nav"><button class="btn ghost" onclick="show('menu')">돌아가기</button></div></section>
+<section id="coupon" class="screen viewer coupon"><img src="assets/coupon.png" alt="소원권"><div class="nav"><button class="btn ghost" onclick="show('menu')">돌아가기</button></div></section>
+<section id="letter" class="screen viewer"><img id="letterImg" src="assets/letter1.png" alt="편지"><div id="counter" class="counter">1 / 6</div><div class="nav"><button class="btn ghost" onclick="prevLetter()">이전</button><button class="btn" onclick="nextLetter()">다음</button></div><button class="home back" onclick="show('menu')">편지 닫기</button></section>
+</main><script>
+const screens=[...document.querySelectorAll('.screen')];
+function show(id){
+  screens.forEach(x=>x.classList.remove('active'));
+  const target=document.getElementById(id);
+  target.classList.add('active');
+  requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
+}
+
+// Robust date check for Safari/iOS: compare Y/M/D parts rather than relying on Date parsing.
+function unlock(){
+  const input=document.getElementById('date');
+  const value=(input.value||'').trim();
+  const parts=value.split('-').map(Number);
+  const ok=parts.length===3 && parts[0]===2026 && parts[1]===5 && parts[2]===18;
+  if(ok){
+    document.getElementById('hint').textContent='';
+    show('love');
+  }else{
+    document.getElementById('hint').textContent='Hint. 우리가 사귄 날짜 💜';
+  }
+}
+
+const no=document.getElementById('no');
+const yes=document.getElementById('yes');
+let hops=0;
+let lastDodge=0;
+
+function dodge(){
+  const now=Date.now();
+  // Prevent one physical tap from firing both touch and click/pointer handlers.
+  if(now-lastDodge<250) return;
+  lastDodge=now;
+
+  const container=document.querySelector('.loveBtns');
+  const maxX=Math.max(38,Math.min(72,(container.clientWidth-no.offsetWidth)/3));
+  const x=(hops%2===0?1:-1)*(maxX*0.75+Math.random()*maxX*0.25);
+  const y=Math.random()*12-6;
+
+  no.style.transform=`translate3d(${x}px,${y}px,0)`;
+  document.getElementById('nomsg').textContent='그건 선택지에 없는데? 💜';
+
+  hops++;
+  const scale=Math.min(1+0.12*hops,1.72);
+  yes.style.transform=`scale(${scale})`;
+  yes.style.transition='transform .22s ease';
+}
+
+// iOS Safari / modern browsers.
+if(window.PointerEvent){
+  no.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+    dodge();
+  },{passive:false});
+}else{
+  // Fallback for older Safari.
+  no.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    dodge();
+  },{passive:false});
+  no.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    dodge();
+  });
+}
+
+// Desktop hover only; never run this path on touch devices.
+if(window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches){
+  no.addEventListener('mouseenter',dodge);
+}
+
+// Block the NO button's normal click action entirely.
+no.addEventListener('click',e=>e.preventDefault());
+
+let page=1;
+const totalPages=6;
+function renderLetter(){
+  const img=document.getElementById('letterImg');
+  img.src=`assets/letter${page}.png`;
+  document.getElementById('counter').textContent=`${page} / ${totalPages}`;
+}
+function openLetter(){page=1;renderLetter();show('letter')}
+function nextLetter(){if(page<totalPages){page++;renderLetter()}else show('menu')}
+function prevLetter(){if(page>1){page--;renderLetter()}}
+
+function resetAll(){
+  const date=document.getElementById('date');
+  date.value='';
+  document.getElementById('hint').textContent='';
+  document.getElementById('nomsg').textContent='';
+  no.style.transform='translate3d(0,0,0)';
+  yes.style.transform='scale(1)';
+  hops=0;
+  lastDodge=0;
+  page=1;
+  renderLetter();
+  show('lock');
+}
+
+// Helps iOS recalculate viewport after rotation / browser chrome changes.
+window.addEventListener('orientationchange',()=>{
+  setTimeout(()=>window.scrollTo(0,0),120);
+});
+</script></body></html>
